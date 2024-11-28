@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'alert', # 경고음 앱
+    'ai', # 인공지능 앱
 ]
 
 MIDDLEWARE = [
