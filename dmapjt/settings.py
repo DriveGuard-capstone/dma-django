@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +28,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # 다른 채널 레이어 사용시 설정 변경
+        # 'CONFIG': {
+        #     'hosts': [('127.0.0.1', 8000)],  # WebSocket이 접속할 호스트와 포트
+        # },
+    },
+}
+
 
 # Application definition
 
@@ -39,7 +49,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'alert', # 경고음 앱
     'ai', # 인공지능 앱
+    'dmapjt.monitoring',
+    'channels',
 ]
+
+ASGI_APPLICATION = 'dmapjt.asgi.application'
+
+BELT_MODEL_PATH = os.path.join(BASE_DIR, 'monitoring', 'models', 'best.pt')
+DROWSY_MODEL_PATH = os.path.join(BASE_DIR, 'monitoring', 'models', 'drbest.pt')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

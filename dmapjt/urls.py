@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from dmapjt.monitoring.consumers import VideoWebsocketConsumer
 
 def home(request):
     return HttpResponse("Welcome to the homepage!")
@@ -25,5 +26,7 @@ urlpatterns = [
     path('', home, name='home'), 
     path('admin/', admin.site.urls),
     path('alert/', include('alert.urls')),
-    path('ai/', include('ai.urls'))
+    path('ai/', include('ai.urls')),
+    # path('monitoring/', include('dmapjt.monitoring.urls')),
+    path('ws/video/', VideoWebsocketConsumer.as_asgi()),  # 웹소켓 경로
 ]
