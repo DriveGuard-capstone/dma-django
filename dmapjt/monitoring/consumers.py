@@ -8,11 +8,11 @@ import pathlib
 from pathlib import Path
 
 class VideoWebsocketConsumer(AsyncWebsocketConsumer):
-    # PosixPath를 WindowsPath로 대체하는 방법
+    # PosixPath 윈도우 사용불가 -> WindowsPath로 대체
     pathlib.PosixPath = pathlib.WindowsPath
 
     async def connect(self):
-        # 웹소켓 연결을 수락합니다.
+        
         await self.accept()
 
         # YOLO 모델 초기화
@@ -32,14 +32,13 @@ class VideoWebsocketConsumer(AsyncWebsocketConsumer):
             force_reload=True
         )
 
-        # 방 그룹에 참여합니다.
         await self.channel_layer.group_add(
             "video",
             self.channel_name
         )
 
     async def disconnect(self, close_code):
-        # 방 그룹에서 이 채널을 제거합니다.
+        # 방 그룹에서 채널 제거
         await self.channel_layer.group_discard(
             "video",
             self.channel_name
@@ -54,13 +53,13 @@ class VideoWebsocketConsumer(AsyncWebsocketConsumer):
                 # 이미지를 PIL 형식으로 변환
                 image = Image.open(io.BytesIO(bytes_data))
 
-                # YOLO 모델로 분석
+                # YOLO 모델 분석
                 result = self.process_image(image)
 
-                # 분석 결과를 클라이언트로 전송
+                # 분석 결과 전송
                 await self.send(json.dumps(result))
             except Exception as e:
-                # 오류 발생 시 처리
+                # 오류 발생 시 메시지 출력
                 error_message = {"error": f"Error processing image: {str(e)}"}
                 await self.send(json.dumps(error_message))
 
@@ -80,7 +79,7 @@ class VideoWebsocketConsumer(AsyncWebsocketConsumer):
         seat_belt_detected = any(seat_belt_results.pandas().xyxy[0]["name"] == "seat_belt")
         drowsy_detected = not any(name in ["Leye", "Reye"] for name in drowsy_results.pandas().xyxy[0].get("name", []))
 
-        # 결과 메시지 작성
+        # 결과 메시지
         results = {
             "seat_belt": "안전벨트를 착용했습니다." if seat_belt_detected else "안전벨트를 착용하지 않았습니다.",
             "drowsy": "졸음운전이 감지되었습니다. 주의하세요!" if drowsy_detected else "졸음운전이 감지되지 않았습니다."
