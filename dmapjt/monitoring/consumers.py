@@ -47,50 +47,42 @@ class VideoWebsocketConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, bytes_data=None):
         """
-        WebSocket으로부터 이미지 데이터를 수신하여 처리
+        WebSocket으로 이미지 데이터를 수신하여 YOLO 모델로 분석
         """
-        if bytes_data:  # 이미지 바이너리 데이터 수신
+        if bytes_data:
             try:
                 # 이미지를 PIL 형식으로 변환
                 image = Image.open(io.BytesIO(bytes_data))
 
-                # 딥러닝 모델 분석 호출
+                # YOLO 모델로 분석
                 result = self.process_image(image)
 
                 # 분석 결과를 클라이언트로 전송
                 await self.send(json.dumps(result))
-
             except Exception as e:
-                # 오류 발생 시
-                await self.send(json.dumps({
-                    "error": f"Error processing image: {str(e)}"
-                }))
+                # 오류 발생 시 처리
+                error_message = {"error": f"Error processing image: {str(e)}"}
+                await self.send(json.dumps(error_message))
 
     def process_image(self, image):
-        """
-        이미지에서 안전벨트와 졸음운전을 감지하고 결과를 반환
-        """
-        # PIL 이미지를 numpy 배열로
+        # YOLO 모델로 이미지를 분석하고 결과 반환
         image_array = np.array(image)
 
-        # 모델 예측
+        # 모델로 예측
         seat_belt_results = self.seat_belt_model(image_array)
         drowsy_results = self.drowsy_model(image_array)
 
-        # 감지 결과 분석
-        seat_belt_detected = any(label in seat_belt_results.names for label in ["seat_belt"])
-        drowsy_detected = any(label in drowsy_results.names for label in ["Leye", "Reye"])
+        # 로그 출력
+        print("Seat Belt Detection Results:", seat_belt_results.pandas().xyxy[0])
+        print("Drowsy Detection Results:", drowsy_results.pandas().xyxy[0])
 
-        # 결과 메시지 생성
-        results = {}
-        if not seat_belt_detected:
-            results['seat_belt'] = "안전벨트를 착용하지 않았습니다."
-        else:
-            results['seat_belt'] = "안전벨트를 착용했습니다."
+        # YOLO 감지 결과 처리
+        seat_belt_detected = any(seat_belt_results.pandas().xyxy[0]["name"] == "seat_belt")
+        drowsy_detected = not any(name in ["Leye", "Reye"] for name in drowsy_results.pandas().xyxy[0].get("name", []))
 
-        if not drowsy_detected:
-            results['drowsy'] = "졸음운전이 감지되었습니다. 주의하세요!"
-        else:
-            results['drowsy'] = "졸음운전이 감지되지 않았습니다."
-
+        # 결과 메시지 작성
+        results = {
+            "seat_belt": "안전벨트를 착용했습니다." if seat_belt_detected else "안전벨트를 착용하지 않았습니다.",
+            "drowsy": "졸음운전이 감지되었습니다. 주의하세요!" if drowsy_detected else "졸음운전이 감지되지 않았습니다."
+        }
         return results
